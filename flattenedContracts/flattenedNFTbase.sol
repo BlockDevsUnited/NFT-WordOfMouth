@@ -1,217 +1,83 @@
 // Sources flattened with hardhat v2.3.0 https://hardhat.org
 
-// File @openzeppelin/contracts-upgradeable/utils/introspection/IERC165Upgradeable.sol@v4.1.0
-
-
+// File contracts/Proxy.sol
 
 // SPDX-License-Identifier: MIT
+
 pragma solidity ^0.8.0;
-/**
- * @dev Interface of the ERC165 standard, as defined in the
- * https://eips.ethereum.org/EIPS/eip-165[EIP].
- *
- * Implementers can declare support of contract interfaces, which can then be
- * queried by others ({ERC165Checker}).
- *
- * For an implementation, see {ERC165}.
- */
-interface IERC165Upgradeable {
-    /**
-     * @dev Returns true if this contract implements the interface defined by
-     * `interfaceId`. See the corresponding
-     * https://eips.ethereum.org/EIPS/eip-165#how-interfaces-are-identified[EIP section]
-     * to learn more about how these ids are created.
-     *
-     * This function call must use less than 30 000 gas.
-     */
-    function supportsInterface(bytes4 interfaceId) external view returns (bool);
-}
-
-
-// File @openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol@v4.1.0
-
-
-
-
 
 /**
- * @dev Required interface of an ERC1155 compliant contract, as defined in the
- * https://eips.ethereum.org/EIPS/eip-1155[EIP].
- *
- * _Available since v3.1._
+ * @title Proxy
+ * @dev Implements delegation of calls to other contracts, with proper
+ * forwarding of return values and bubbling of failures.
+ * It defines a fallback function that delegates all calls to the address
+ * returned by the abstract _implementation() internal function.
  */
-interface IERC1155Upgradeable is IERC165Upgradeable {
-    /**
-     * @dev Emitted when `value` tokens of token type `id` are transferred from `from` to `to` by `operator`.
-     */
-    event TransferSingle(address indexed operator, address indexed from, address indexed to, uint256 id, uint256 value);
+abstract contract Proxy {
+  /**
+   * @dev Fallback function.
+   * Implemented entirely in `_fallback`.
+   */
+  fallback () payable external {
+    _fallback();
+  }
 
-    /**
-     * @dev Equivalent to multiple {TransferSingle} events, where `operator`, `from` and `to` are the same for all
-     * transfers.
-     */
-    event TransferBatch(address indexed operator, address indexed from, address indexed to, uint256[] ids, uint256[] values);
+  /**
+   * @dev Receive function.
+   * Implemented entirely in `_fallback`.
+   */
+  receive () payable external {
+    _fallback();
+  }
 
-    /**
-     * @dev Emitted when `account` grants or revokes permission to `operator` to transfer their tokens, according to
-     * `approved`.
-     */
-    event ApprovalForAll(address indexed account, address indexed operator, bool approved);
+  /**
+   * @return The Address of the implementation.
+   */
+  function _implementation() internal virtual view returns (address);
 
-    /**
-     * @dev Emitted when the URI for token type `id` changes to `value`, if it is a non-programmatic URI.
-     *
-     * If an {URI} event was emitted for `id`, the standard
-     * https://eips.ethereum.org/EIPS/eip-1155#metadata-extensions[guarantees] that `value` will equal the value
-     * returned by {IERC1155MetadataURI-uri}.
-     */
-    event URI(string value, uint256 indexed id);
+  /**
+   * @dev Delegates execution to an implementation contract.
+   * This is a low level function that doesn't return to its internal call site.
+   * It will return to the external caller whatever the implementation returns.
+   * @param implementation Address to delegate.
+   */
+  function _delegate(address implementation) internal {
+    assembly {
+      // Copy msg.data. We take full control of memory in this inline assembly
+      // block because it will not return to Solidity code. We overwrite the
+      // Solidity scratch pad at memory position 0.
+      calldatacopy(0, 0, calldatasize())
 
-    /**
-     * @dev Returns the amount of tokens of token type `id` owned by `account`.
-     *
-     * Requirements:
-     *
-     * - `account` cannot be the zero address.
-     */
-    function balanceOf(address account, uint256 id) external view returns (uint256);
+      // Call the implementation.
+      // out and outsize are 0 because we don't know the size yet.
+      let result := delegatecall(gas(), implementation, 0, calldatasize(), 0, 0)
 
-    /**
-     * @dev xref:ROOT:erc1155.adoc#batch-operations[Batched] version of {balanceOf}.
-     *
-     * Requirements:
-     *
-     * - `accounts` and `ids` must have the same length.
-     */
-    function balanceOfBatch(address[] calldata accounts, uint256[] calldata ids) external view returns (uint256[] memory);
+      // Copy the returned data.
+      returndatacopy(0, 0, returndatasize())
 
-    /**
-     * @dev Grants or revokes permission to `operator` to transfer the caller's tokens, according to `approved`,
-     *
-     * Emits an {ApprovalForAll} event.
-     *
-     * Requirements:
-     *
-     * - `operator` cannot be the caller.
-     */
-    function setApprovalForAll(address operator, bool approved) external;
+      switch result
+      // delegatecall returns 0 on error.
+      case 0 { revert(0, returndatasize()) }
+      default { return(0, returndatasize()) }
+    }
+  }
 
-    /**
-     * @dev Returns true if `operator` is approved to transfer ``account``'s tokens.
-     *
-     * See {setApprovalForAll}.
-     */
-    function isApprovedForAll(address account, address operator) external view returns (bool);
+  /**
+   * @dev Function that is run as the first thing in the fallback function.
+   * Can be redefined in derived contracts to add functionality.
+   * Redefinitions must call super._willFallback().
+   */
+  function _willFallback() internal virtual {
+  }
 
-    /**
-     * @dev Transfers `amount` tokens of token type `id` from `from` to `to`.
-     *
-     * Emits a {TransferSingle} event.
-     *
-     * Requirements:
-     *
-     * - `to` cannot be the zero address.
-     * - If the caller is not `from`, it must be have been approved to spend ``from``'s tokens via {setApprovalForAll}.
-     * - `from` must have a balance of tokens of type `id` of at least `amount`.
-     * - If `to` refers to a smart contract, it must implement {IERC1155Receiver-onERC1155Received} and return the
-     * acceptance magic value.
-     */
-    function safeTransferFrom(address from, address to, uint256 id, uint256 amount, bytes calldata data) external;
-
-    /**
-     * @dev xref:ROOT:erc1155.adoc#batch-operations[Batched] version of {safeTransferFrom}.
-     *
-     * Emits a {TransferBatch} event.
-     *
-     * Requirements:
-     *
-     * - `ids` and `amounts` must have the same length.
-     * - If `to` refers to a smart contract, it must implement {IERC1155Receiver-onERC1155BatchReceived} and return the
-     * acceptance magic value.
-     */
-    function safeBatchTransferFrom(address from, address to, uint256[] calldata ids, uint256[] calldata amounts, bytes calldata data) external;
-}
-
-
-// File @openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155ReceiverUpgradeable.sol@v4.1.0
-
-
-
-
-
-/**
- * @dev _Available since v3.1._
- */
-interface IERC1155ReceiverUpgradeable is IERC165Upgradeable {
-
-    /**
-        @dev Handles the receipt of a single ERC1155 token type. This function is
-        called at the end of a `safeTransferFrom` after the balance has been updated.
-        To accept the transfer, this must return
-        `bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"))`
-        (i.e. 0xf23a6e61, or its own function selector).
-        @param operator The address which initiated the transfer (i.e. msg.sender)
-        @param from The address which previously owned the token
-        @param id The ID of the token being transferred
-        @param value The amount of tokens being transferred
-        @param data Additional data with no specified format
-        @return `bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"))` if transfer is allowed
-    */
-    function onERC1155Received(
-        address operator,
-        address from,
-        uint256 id,
-        uint256 value,
-        bytes calldata data
-    )
-        external
-        returns(bytes4);
-
-    /**
-        @dev Handles the receipt of a multiple ERC1155 token types. This function
-        is called at the end of a `safeBatchTransferFrom` after the balances have
-        been updated. To accept the transfer(s), this must return
-        `bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))`
-        (i.e. 0xbc197c81, or its own function selector).
-        @param operator The address which initiated the batch transfer (i.e. msg.sender)
-        @param from The address which previously owned the token
-        @param ids An array containing ids of each token being transferred (order and length must match values array)
-        @param values An array containing amounts of each token being transferred (order and length must match ids array)
-        @param data Additional data with no specified format
-        @return `bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))` if transfer is allowed
-    */
-    function onERC1155BatchReceived(
-        address operator,
-        address from,
-        uint256[] calldata ids,
-        uint256[] calldata values,
-        bytes calldata data
-    )
-        external
-        returns(bytes4);
-}
-
-
-// File @openzeppelin/contracts-upgradeable/token/ERC1155/extensions/IERC1155MetadataURIUpgradeable.sol@v4.1.0
-
-
-
-
-
-/**
- * @dev Interface of the optional ERC1155MetadataExtension interface, as defined
- * in the https://eips.ethereum.org/EIPS/eip-1155#metadata-extensions[EIP].
- *
- * _Available since v3.1._
- */
-interface IERC1155MetadataURIUpgradeable is IERC1155Upgradeable {
-    /**
-     * @dev Returns the URI for token type `id`.
-     *
-     * If the `\{id\}` substring is present in the URI, it must be replaced by
-     * clients with the actual token type ID.
-     */
-    function uri(uint256 id) external view returns (string memory);
+  /**
+   * @dev fallback implementation.
+   * Extracted to enable manual triggering.
+   */
+  function _fallback() internal {
+    _willFallback();
+    _delegate(_implementation());
+  }
 }
 
 
@@ -433,6 +299,449 @@ abstract contract Initializable {
             _initializing = false;
         }
     }
+}
+
+
+// File contracts/UpgradeabilityProxy.sol
+
+
+
+
+/**
+ * @title UpgradeabilityProxy
+ * @dev This contract implements a proxy that allows to change the
+ * implementation address to which it will delegate.
+ * Such a change is called an implementation upgrade.
+ */
+contract UpgradeabilityProxy is Proxy, Initializable {
+  /**
+   * @dev Contract constructor.
+   * @param _logic Address of the initial implementation.
+   * @param _data Data to send as msg.data to the implementation to initialize the proxied contract.
+   * It should include the signature and the parameters of the function to be called, as described in
+   * https://solidity.readthedocs.io/en/v0.4.24/abi-spec.html#function-selector-and-argument-encoding.
+   * This parameter is optional, if no data is given the initialization call to proxied contract will be skipped.
+   */
+   
+  function __UpgradeabilityProxy_init (address _logic, bytes memory _data) internal initializer {
+      __UpgradeabilityProxy(_logic, _data);
+  }
+  
+  function __UpgradeabilityProxy (address _logic, bytes memory _data) internal initializer {
+    assert(IMPLEMENTATION_SLOT == bytes32(uint256(keccak256('eip1967.proxy.implementation')) - 1));
+    _setImplementation(_logic);
+    if(_data.length > 0) {
+      (bool success,) = _logic.delegatecall(_data);
+      require(success);
+    }
+  }  
+
+  /**
+   * @dev Emitted when the implementation is upgraded.
+   * @param implementation Address of the new implementation.
+   */
+  event Upgraded(address indexed implementation);
+
+  /**
+   * @dev Storage slot with the address of the current implementation.
+   * This is the keccak-256 hash of "eip1967.proxy.implementation" subtracted by 1, and is
+   * validated in the constructor.
+   */
+  bytes32 internal constant IMPLEMENTATION_SLOT = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
+
+  /**
+   * @dev Returns the current implementation.
+   * @return impl Address of the current implementation
+   */
+  function _implementation() internal override view returns (address impl) {
+    bytes32 slot = IMPLEMENTATION_SLOT;
+    assembly {
+      impl := sload(slot)
+    }
+  }
+
+  /**
+   * @dev Upgrades the proxy to a new implementation.
+   * @param newImplementation Address of the new implementation.
+   */
+  function _upgradeTo(address newImplementation) internal {
+    _setImplementation(newImplementation);
+    emit Upgraded(newImplementation);
+  }
+
+  /**
+   * @dev Sets the implementation address of the proxy.
+   * @param newImplementation Address of the new implementation.
+   */
+  function _setImplementation(address newImplementation) internal {
+    require(AddressUpgradeable.isContract(newImplementation), "Cannot set a proxy implementation to a non-contract address");
+
+    bytes32 slot = IMPLEMENTATION_SLOT;
+
+    assembly {
+      sstore(slot, newImplementation)
+    }
+  }
+}
+
+
+// File contracts/AdminUpgradeabilityProxy.sol
+
+
+
+
+/**
+ * @title AdminUpgradeabilityProxy
+ * @dev This contract combines an upgradeability proxy with an authorization
+ * mechanism for administrative tasks.
+ * All external functions in this contract must be guarded by the
+ * `ifAdmin` modifier. See ethereum/solidity#3864 for a Solidity
+ * feature proposal that would enable this to be done automatically.
+ */
+contract AdminUpgradeabilityProxy is UpgradeabilityProxy {
+  /**
+   * Contract constructor.
+   * @param _logic address of the initial implementation.
+   * @param _admin Address of the proxy administrator.
+   * @param _data Data to send as msg.data to the implementation to initialize the proxied contract.
+   * It should include the signature and the parameters of the function to be called, as described in
+   * https://solidity.readthedocs.io/en/v0.4.24/abi-spec.html#function-selector-and-argument-encoding.
+   * This parameter is optional, if no data is given the initialization call to proxied contract will be skipped.
+   */
+   
+  function __AdminUpgradeabilityProxy_init (address _logic, address _admin, bytes memory _data) internal initializer {
+      __AdminUpgradeabilityProxy (_logic, _admin, _data);
+  }
+  
+  
+  function __AdminUpgradeabilityProxy (address _logic, address _admin, bytes memory _data) internal initializer {
+    __UpgradeabilityProxy_init (_logic, _data);
+    assert(ADMIN_SLOT == bytes32(uint256(keccak256('eip1967.proxy.admin')) - 1));
+    _setAdmin(_admin);
+  }
+    
+
+  /**
+   * @dev Emitted when the administration has been transferred.
+   * @param previousAdmin Address of the previous admin.
+   * @param newAdmin Address of the new admin.
+   */
+  event AdminChanged(address previousAdmin, address newAdmin);
+
+  /**
+   * @dev Storage slot with the admin of the contract.
+   * This is the keccak-256 hash of "eip1967.proxy.admin" subtracted by 1, and is
+   * validated in the constructor.
+   */
+
+  bytes32 internal constant ADMIN_SLOT = 0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;
+
+  /**
+   * @dev Modifier to check whether the `msg.sender` is the admin.
+   * If it is, it will run the function. Otherwise, it will delegate the call
+   * to the implementation.
+   */
+  modifier ifAdmin() {
+    if (msg.sender == _admin()) {
+      _;
+    } else {
+      _fallback();
+    }
+  }
+
+  /**
+   * @return The address of the proxy admin.
+   */
+  function admin() external ifAdmin returns (address) {
+    return _admin();
+  }
+
+  /**
+   * @return The address of the implementation.
+   */
+  function implementation() external ifAdmin returns (address) {
+    return _implementation();
+  }
+
+  /**
+   * @dev Changes the admin of the proxy.
+   * Only the current admin can call this function.
+   * @param newAdmin Address to transfer proxy administration to.
+   */
+  function changeAdmin(address newAdmin) external ifAdmin {
+    require(newAdmin != address(0), "Cannot change the admin of a proxy to the zero address");
+    emit AdminChanged(_admin(), newAdmin);
+    _setAdmin(newAdmin);
+  }
+
+  /**
+   * @dev Upgrade the backing implementation of the proxy.
+   * Only the admin can call this function.
+   * @param newImplementation Address of the new implementation.
+   */
+  function upgradeTo(address newImplementation) external ifAdmin {
+    _upgradeTo(newImplementation);
+  }
+
+  /**
+   * @dev Upgrade the backing implementation of the proxy and call a function
+   * on the new implementation.
+   * This is useful to initialize the proxied contract.
+   * @param newImplementation Address of the new implementation.
+   * @param data Data to send as msg.data in the low level call.
+   * It should include the signature and the parameters of the function to be called, as described in
+   * https://solidity.readthedocs.io/en/v0.4.24/abi-spec.html#function-selector-and-argument-encoding.
+   */
+  function upgradeToAndCall(address newImplementation, bytes calldata data) payable external ifAdmin {
+    _upgradeTo(newImplementation);
+    (bool success,) = newImplementation.delegatecall(data);
+    require(success);
+  }
+
+  /**
+   * @return adm The admin slot.
+   */
+  function _admin() internal view returns (address adm) {
+    bytes32 slot = ADMIN_SLOT;
+    assembly {
+      adm := sload(slot)
+    }
+  }
+
+  /**
+   * @dev Sets the address of the proxy admin.
+   * @param newAdmin Address of the new proxy admin.
+   */
+  function _setAdmin(address newAdmin) internal {
+    bytes32 slot = ADMIN_SLOT;
+
+    assembly {
+      sstore(slot, newAdmin)
+    }
+  }
+
+  /**
+   * @dev Only fall back when the sender is not the admin.
+   */
+  function _willFallback() internal override virtual {
+    require(msg.sender != _admin(), "Cannot call fallback function from the proxy admin");
+    super._willFallback();
+  }
+}
+
+
+// File @openzeppelin/contracts-upgradeable/utils/introspection/IERC165Upgradeable.sol@v4.1.0
+
+
+
+
+
+/**
+ * @dev Interface of the ERC165 standard, as defined in the
+ * https://eips.ethereum.org/EIPS/eip-165[EIP].
+ *
+ * Implementers can declare support of contract interfaces, which can then be
+ * queried by others ({ERC165Checker}).
+ *
+ * For an implementation, see {ERC165}.
+ */
+interface IERC165Upgradeable {
+    /**
+     * @dev Returns true if this contract implements the interface defined by
+     * `interfaceId`. See the corresponding
+     * https://eips.ethereum.org/EIPS/eip-165#how-interfaces-are-identified[EIP section]
+     * to learn more about how these ids are created.
+     *
+     * This function call must use less than 30 000 gas.
+     */
+    function supportsInterface(bytes4 interfaceId) external view returns (bool);
+}
+
+
+// File @openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol@v4.1.0
+
+
+
+
+
+/**
+ * @dev Required interface of an ERC1155 compliant contract, as defined in the
+ * https://eips.ethereum.org/EIPS/eip-1155[EIP].
+ *
+ * _Available since v3.1._
+ */
+interface IERC1155Upgradeable is IERC165Upgradeable {
+    /**
+     * @dev Emitted when `value` tokens of token type `id` are transferred from `from` to `to` by `operator`.
+     */
+    event TransferSingle(address indexed operator, address indexed from, address indexed to, uint256 id, uint256 value);
+
+    /**
+     * @dev Equivalent to multiple {TransferSingle} events, where `operator`, `from` and `to` are the same for all
+     * transfers.
+     */
+    event TransferBatch(address indexed operator, address indexed from, address indexed to, uint256[] ids, uint256[] values);
+
+    /**
+     * @dev Emitted when `account` grants or revokes permission to `operator` to transfer their tokens, according to
+     * `approved`.
+     */
+    event ApprovalForAll(address indexed account, address indexed operator, bool approved);
+
+    /**
+     * @dev Emitted when the URI for token type `id` changes to `value`, if it is a non-programmatic URI.
+     *
+     * If an {URI} event was emitted for `id`, the standard
+     * https://eips.ethereum.org/EIPS/eip-1155#metadata-extensions[guarantees] that `value` will equal the value
+     * returned by {IERC1155MetadataURI-uri}.
+     */
+    event URI(string value, uint256 indexed id);
+
+    /**
+     * @dev Returns the amount of tokens of token type `id` owned by `account`.
+     *
+     * Requirements:
+     *
+     * - `account` cannot be the zero address.
+     */
+    function balanceOf(address account, uint256 id) external view returns (uint256);
+
+    /**
+     * @dev xref:ROOT:erc1155.adoc#batch-operations[Batched] version of {balanceOf}.
+     *
+     * Requirements:
+     *
+     * - `accounts` and `ids` must have the same length.
+     */
+    function balanceOfBatch(address[] calldata accounts, uint256[] calldata ids) external view returns (uint256[] memory);
+
+    /**
+     * @dev Grants or revokes permission to `operator` to transfer the caller's tokens, according to `approved`,
+     *
+     * Emits an {ApprovalForAll} event.
+     *
+     * Requirements:
+     *
+     * - `operator` cannot be the caller.
+     */
+    function setApprovalForAll(address operator, bool approved) external;
+
+    /**
+     * @dev Returns true if `operator` is approved to transfer ``account``'s tokens.
+     *
+     * See {setApprovalForAll}.
+     */
+    function isApprovedForAll(address account, address operator) external view returns (bool);
+
+    /**
+     * @dev Transfers `amount` tokens of token type `id` from `from` to `to`.
+     *
+     * Emits a {TransferSingle} event.
+     *
+     * Requirements:
+     *
+     * - `to` cannot be the zero address.
+     * - If the caller is not `from`, it must be have been approved to spend ``from``'s tokens via {setApprovalForAll}.
+     * - `from` must have a balance of tokens of type `id` of at least `amount`.
+     * - If `to` refers to a smart contract, it must implement {IERC1155Receiver-onERC1155Received} and return the
+     * acceptance magic value.
+     */
+    function safeTransferFrom(address from, address to, uint256 id, uint256 amount, bytes calldata data) external;
+
+    /**
+     * @dev xref:ROOT:erc1155.adoc#batch-operations[Batched] version of {safeTransferFrom}.
+     *
+     * Emits a {TransferBatch} event.
+     *
+     * Requirements:
+     *
+     * - `ids` and `amounts` must have the same length.
+     * - If `to` refers to a smart contract, it must implement {IERC1155Receiver-onERC1155BatchReceived} and return the
+     * acceptance magic value.
+     */
+    function safeBatchTransferFrom(address from, address to, uint256[] calldata ids, uint256[] calldata amounts, bytes calldata data) external;
+}
+
+
+// File @openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155ReceiverUpgradeable.sol@v4.1.0
+
+
+
+
+
+/**
+ * @dev _Available since v3.1._
+ */
+interface IERC1155ReceiverUpgradeable is IERC165Upgradeable {
+
+    /**
+        @dev Handles the receipt of a single ERC1155 token type. This function is
+        called at the end of a `safeTransferFrom` after the balance has been updated.
+        To accept the transfer, this must return
+        `bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"))`
+        (i.e. 0xf23a6e61, or its own function selector).
+        @param operator The address which initiated the transfer (i.e. msg.sender)
+        @param from The address which previously owned the token
+        @param id The ID of the token being transferred
+        @param value The amount of tokens being transferred
+        @param data Additional data with no specified format
+        @return `bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"))` if transfer is allowed
+    */
+    function onERC1155Received(
+        address operator,
+        address from,
+        uint256 id,
+        uint256 value,
+        bytes calldata data
+    )
+        external
+        returns(bytes4);
+
+    /**
+        @dev Handles the receipt of a multiple ERC1155 token types. This function
+        is called at the end of a `safeBatchTransferFrom` after the balances have
+        been updated. To accept the transfer(s), this must return
+        `bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))`
+        (i.e. 0xbc197c81, or its own function selector).
+        @param operator The address which initiated the batch transfer (i.e. msg.sender)
+        @param from The address which previously owned the token
+        @param ids An array containing ids of each token being transferred (order and length must match values array)
+        @param values An array containing amounts of each token being transferred (order and length must match ids array)
+        @param data Additional data with no specified format
+        @return `bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))` if transfer is allowed
+    */
+    function onERC1155BatchReceived(
+        address operator,
+        address from,
+        uint256[] calldata ids,
+        uint256[] calldata values,
+        bytes calldata data
+    )
+        external
+        returns(bytes4);
+}
+
+
+// File @openzeppelin/contracts-upgradeable/token/ERC1155/extensions/IERC1155MetadataURIUpgradeable.sol@v4.1.0
+
+
+
+
+
+/**
+ * @dev Interface of the optional ERC1155MetadataExtension interface, as defined
+ * in the https://eips.ethereum.org/EIPS/eip-1155#metadata-extensions[EIP].
+ *
+ * _Available since v3.1._
+ */
+interface IERC1155MetadataURIUpgradeable is IERC1155Upgradeable {
+    /**
+     * @dev Returns the URI for token type `id`.
+     *
+     * If the `\{id\}` substring is present in the URI, it must be replaced by
+     * clients with the actual token type ID.
+     */
+    function uri(uint256 id) external view returns (string memory);
 }
 
 
@@ -919,15 +1228,19 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
 
 // File contracts/WordOfMouth.sol
 
-contract WordOfMouth is  ERC1155Upgradeable {
+
+
+
+contract WordOfMouth is  ERC1155Upgradeable, AdminUpgradeabilityProxy {
   string public name = "Word of Mouth";
   string public symbol = "WOM";
 
-  function initialize(string memory uri) public virtual initializer {
-      __WordofMouth_init(uri);
+  function initialize(string memory uri, address _logic, address _admin, bytes memory _data) public virtual initializer {
+      __WordofMouth_init(uri, _logic, _admin, _data);
     }
 
-  function __WordofMouth_init(string memory uri) internal initializer {
+  function __WordofMouth_init(string memory uri, address _logic, address _admin, bytes memory _data) internal initializer {
+        __AdminUpgradeabilityProxy_init (_logic, _admin, _data);
         __Context_init_unchained();
         __ERC165_init_unchained();
         __ERC1155_init_unchained(uri);

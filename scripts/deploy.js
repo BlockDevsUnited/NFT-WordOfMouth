@@ -3,7 +3,7 @@
 //
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
-const hre = require("hardhat");
+const { ethers, upgrades } = require("hardhat");
 
 async function main() {
  // We get the contract to deploy
