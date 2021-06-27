@@ -1,14 +1,17 @@
-// We require the Hardhat Runtime Environment explicitly here. This is optional 
+// We require the Hardhat Runtime Environment explicitly here. This is optional
 // but useful for running the script in a standalone fashion through `node <script>`.
 //
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
-const { ethers, upgrades } = require("hardhat");
+const hre = require("hardhat");
 
 async function main() {
- // We get the contract to deploy
- const NFTbase = await ethers.getContractFactory("WordOfMouth");
- const nftbase = await NFTbase.deploy();
+  const WOM = await ethers.getContractFactory("WordOfMouth");
+
+   const wom = await upgrades.deployProxy(WOM);
+
+   await wom.deployed();
+   console.log("MyCollectible deployed to:", wom.address);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

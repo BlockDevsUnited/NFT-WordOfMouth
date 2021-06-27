@@ -1,3 +1,4 @@
+require('@nomiclabs/hardhat-ethers');
 require("@nomiclabs/hardhat-waffle");
 require('@openzeppelin/hardhat-upgrades');
 
@@ -27,11 +28,15 @@ module.exports = {
       rinkeby: {
         url: "",
         accounts: [""]
+      },
+      ropsten: {
+        url: "",
+        accounts: [""]
         }
       },
 
     solidity: {
-      version: "0.8.0"
+      version: "0.8.2"
     },
 
     paths: {
@@ -40,9 +45,8 @@ module.exports = {
       cache: "./cache",
       artifacts: "./artifacts"
     },
-    
+
     mocha: {
       timeout: 20000
-  } 
+  }
 };
-
