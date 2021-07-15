@@ -24,11 +24,15 @@ module.exports = {
       networks: {
         hardhat: {
         },
-
+        
+      rinkeby: {
+        url: "",
+        accounts: [""]
+      },
       ropsten: {
         url: "",
         accounts: [""]
-      }
+        }
       },
 
     solidity: {

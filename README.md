@@ -40,6 +40,14 @@ npm install @nomiclabs/hardhat-waffle ethereum-waffle chai @nomiclabs/hardhat-et
 ```
 <br>
 
+## Test the contract
+
+To test the contract:
+
+```
+npx hardhat test
+```
+
 ## Configuring Deployment
 
 Now to deploy the NFT contract on the Rinkeby Testnet.
@@ -53,7 +61,7 @@ It should look like: https://eth-rinkeby.alchemyapi.io/v2/......
 Next, configure **module.exports** in *hardhat.config.js*
 
 ```
-defaultNetwork: "rinkeby",
+defaultNetwork: "ropsten",
 networks: {
   hardhat: {
   },
@@ -97,10 +105,6 @@ If everything is configured properly, you can now deploy. In your terminal, run 
 
 ```
 npx hardhat run --network rinkeby scripts/deploy.js
-```
-
-```
-npx hardhat run --network rinkeby scripts/upgrade.js
 ```
 
 To see if your contract has been deployed, check your account in etherscan.io.

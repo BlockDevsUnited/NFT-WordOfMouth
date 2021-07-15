@@ -26,6 +26,10 @@ contract WordOfMouth is ERC1155Upgradeable {
 
 contract WordOfMouthV2 is WordOfMouth {
   uint public newValue;
+  
+  function versionCheck() pure public returns (string memory) {
+    return "WordOfMouthV2";
+  }
 
   function incrementNewValue() public {
     newValue++;
