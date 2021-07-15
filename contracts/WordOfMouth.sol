@@ -9,7 +9,7 @@ contract WordOfMouth is ERC1155Upgradeable {
   string public symbol;
 
   function initialize() initializer public {
-        name = "Word of Mouth";
+        name = "Word of Mouth~";
         symbol = "WOM";
         __ERC1155_init("");
    }
@@ -22,4 +22,12 @@ contract WordOfMouth is ERC1155Upgradeable {
         _mintBatch(to, ids, amounts, data);
     }
 
+}
+
+contract WordOfMouthV2 is WordOfMouth {
+  uint public newValue;
+
+  function incrementNewValue() public {
+    newValue++;
+  }
 }

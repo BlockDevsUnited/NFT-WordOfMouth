@@ -19,20 +19,16 @@ task("accounts", "Prints the list of accounts", async () => {
  * @type import('hardhat/config').HardhatUserConfig
  */
 module.exports = {
-  defaultNetwork: "rinkeby",
+  defaultNetwork: "ropsten",
 
       networks: {
         hardhat: {
         },
 
-      rinkeby: {
-        url: "",
-        accounts: [""]
-      },
       ropsten: {
         url: "",
         accounts: [""]
-        }
+      }
       },
 
     solidity: {

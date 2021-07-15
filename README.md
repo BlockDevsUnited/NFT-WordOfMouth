@@ -4,7 +4,7 @@ This is the NFT base contract for Word Of Mouth. It is based on ERC1155 Upgradab
 
 <br>
 
-## Steps To Run and deploy the contract 
+## Steps To Run and deploy the contract
 
 Clone the Repo
 
@@ -18,7 +18,7 @@ cd NFT-WordOfMouth
 ```
 
 Install the project
-``` 
+```
 npm install
 ```
 
@@ -99,6 +99,10 @@ If everything is configured properly, you can now deploy. In your terminal, run 
 npx hardhat run --network rinkeby scripts/deploy.js
 ```
 
+```
+npx hardhat run --network rinkeby scripts/upgrade.js
+```
+
 To see if your contract has been deployed, check your account in etherscan.io.
 
 A new transaction should appear, and the transaction should deploy a new contract!
@@ -117,4 +121,3 @@ Take the code, and clean it up, then verify it on etherscan.
 
 For cleaning delete all the multiple instances of *SPDX-License-Identifier* and *pragma solidity*.
 <br>
-
