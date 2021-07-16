@@ -1,3 +1,4 @@
+// Sources flattened with hardhat v2.4.1 https://hardhat.org
 
 // File @openzeppelin/contracts-upgradeable/utils/introspection/IERC165Upgradeable.sol@v4.1.0
 
@@ -191,6 +192,8 @@ interface IERC1155ReceiverUpgradeable is IERC165Upgradeable {
 
 
 
+
+
 /**
  * @dev Interface of the optional ERC1155MetadataExtension interface, as defined
  * in the https://eips.ethereum.org/EIPS/eip-1155#metadata-extensions[EIP].
@@ -209,6 +212,8 @@ interface IERC1155MetadataURIUpgradeable is IERC1155Upgradeable {
 
 
 // File @openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol@v4.1.0
+
+
 
 
 
@@ -378,7 +383,9 @@ library AddressUpgradeable {
 // File @openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol@v4.1.0
 
 
+
 // solhint-disable-next-line compiler-version
+
 
 /**
  * @dev This is a base contract to aid in writing upgradeable contracts, or any kind of contract that will be deployed
@@ -429,6 +436,8 @@ abstract contract Initializable {
 
 
 
+
+
 /*
  * @dev Provides information about the current execution context, including the
  * sender of the transaction and its data. While these are generally available
@@ -459,6 +468,8 @@ abstract contract ContextUpgradeable is Initializable {
 
 
 // File @openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol@v4.1.0
+
+
 
 
 
@@ -495,6 +506,8 @@ abstract contract ERC165Upgradeable is Initializable, IERC165Upgradeable {
 
 
 // File @openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol@v4.1.0
+
+
 
 
 
@@ -903,8 +916,8 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
 // File contracts/WordOfMouth.sol
 
 
-pragma solidity ^0.8.2;
 
+pragma solidity ^0.8.2;
 contract WordOfMouth is ERC1155Upgradeable {
   string public name;
   string public symbol;
@@ -923,4 +936,16 @@ contract WordOfMouth is ERC1155Upgradeable {
         _mintBatch(to, ids, amounts, data);
     }
 
+}
+
+contract WordOfMouthV2 is WordOfMouth {
+  uint public newValue;
+  
+  function versionCheck() pure public returns (string memory) {
+    return "WordOfMouthV2";
+  }
+
+  function incrementNewValue() public {
+    newValue++;
+  }
 }

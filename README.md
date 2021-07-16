@@ -42,10 +42,16 @@ npm install @nomiclabs/hardhat-waffle ethereum-waffle chai @nomiclabs/hardhat-et
 
 ## Test the contract
 
+In a new terminal start a local node using:
+
+```
+npx hardhat node
+```
+
 To test the contract:
 
 ```
-npx hardhat test
+npx hardhat test --network localhost
 ```
 
 ## Configuring Deployment
@@ -91,20 +97,16 @@ You must add your own account private key and provider url to the config
 
 First, you must write a deploy script. Go to *scripts/deploy.js* in the scripts folder.
 
-Inside function main(), add the code to deploy your contract
-
-```
-async function main() {
-  // We get the contract to deploy
-  const NFTbase = await ethers.getContractFactory("WordOfMouth");
-  const nftbase = await NFTbase.deploy();
-}
-```
-
 If everything is configured properly, you can now deploy. In your terminal, run the deploy command
 
 ```
 npx hardhat run --network rinkeby scripts/deploy.js
+```
+
+Now copy and paste the V1 address into the `" "` of *upgrades.upgradeProxy()* in [upgrade.js](https://github.com/BlockDevsUnited/NFT-WordOfMouth/blob/main/scripts/upgrade.js)
+
+```
+npx hardhat run --network rinkeby scripts/upgrade.js
 ```
 
 To see if your contract has been deployed, check your account in etherscan.io.
@@ -125,3 +127,7 @@ Take the code, and clean it up, then verify it on etherscan.
 
 For cleaning delete all the multiple instances of *SPDX-License-Identifier* and *pragma solidity*.
 <br>
+
+## Troubleshooting
+
+If while upgrading you get any kind of error, then just remove the `.openzeppelin` folder and again repeat the both deploy and upgrade steps.
